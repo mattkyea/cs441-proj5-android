@@ -28,7 +28,10 @@ android {
     }
 }
 
-repositories { mavenCentral() }
+repositories {
+    mavenCentral()
+    maven { url "https://jitpack.io" }
+}
 
 dependencies {
 
@@ -41,4 +44,5 @@ dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'com.android.support:support-v4:19.+'
     implementation 'org.twitter4j:twitter4j-core:4.0.2'
+    implementation 'com.github.Philipinho:CoinGecko-Java:47f333af39a39d6c7721367fa05a53dd046eddad'
 }

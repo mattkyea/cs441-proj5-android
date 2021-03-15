@@ -5,6 +5,18 @@ import androidx.appcompat.app.AppCompatActivity;
 import twitter4j.*;
 import twitter4j.conf.ConfigurationBuilder;
 
+
+import com.litesoftwares.coingecko.CoinGeckoApiClient;
+import com.litesoftwares.coingecko.constant.Currency;
+import com.litesoftwares.coingecko.domain.Coins.CoinData.DeveloperData;
+import com.litesoftwares.coingecko.domain.Coins.CoinData.IcoData;
+import com.litesoftwares.coingecko.domain.Coins.CoinFullData;
+import com.litesoftwares.coingecko.domain.Coins.CoinList;
+import com.litesoftwares.coingecko.domain.Coins.CoinMarkets;
+import com.litesoftwares.coingecko.domain.Coins.CoinTickerById;
+import com.litesoftwares.coingecko.domain.Coins.MarketChart;
+import com.litesoftwares.coingecko.impl.CoinGeckoApiClientImpl;
+
 import android.os.Bundle;
 
 import java.util.List;
@@ -39,6 +51,17 @@ public class MainActivity extends AppCompatActivity {
                     for (Status status : statuses) {
                         System.out.println(status.getUser().getName() + ":" + status.getText() + " at " + status.getCreatedAt());
                     }
+
+
+                    CoinGeckoApiClient client = new CoinGeckoApiClientImpl();
+
+                    MarketChart mc = client.getCoinMarketChartRangeById("dogecoin", "usd", "1392577232","1422577232");
+                    System.out.println(mc.getPrices().get(0));
+                    for(List<String> s: mc.getPrices()){
+                        System.out.println("at " +  s.get(0) + " doge was worth " + s.get(1));
+                    }
+
+
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -64,6 +87,9 @@ public class MainActivity extends AppCompatActivity {
     //decided that using Twitter4J would be easier
     //its basically a Java wrapper around Twitter's API
     //i've done the same thing in the past (Spotipy for Python around Spotify's API) and liked it much more
+
+    //basic, but I'll leave front end for later
+    //let's use crypto API next
 
 
 
