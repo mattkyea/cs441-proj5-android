@@ -61,3 +61,12 @@ How to add git repos as gradle dependencies. I actually used this a few projects
 
 #### https://stackoverflow.com/questions/7784421/getting-unix-timestamp-from-date
 How to get UNIX Timestamp from Date object.
+
+#### https://stackoverflow.com/questions/5161951/android-only-the-original-thread-that-created-a-view-hierarchy-can-touch-its-vi
+UI thread issue (need to do API calls on 2nd thread, but have to wait for that to finish to display recycler, so that code has to also go there, but must be wrapped in UI thread code).
+
+#### https://stackoverflow.com/questions/9911016/double-subtraction-precision-issue
+Helped me realize I needed to use BigDecimal
+
+#### https://stackoverflow.com/questions/27588965/how-to-use-custom-font-in-a-project-written-in-android-studio
+How to import a font in Android studio

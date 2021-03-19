@@ -1,18 +1,25 @@
 package com.example.assign5;
 
+import java.math.BigDecimal;
+
 public class RowEntry {
 
     private String tweetContent;
-    private float netGainLoss;
+    private BigDecimal netGainLoss;
     private boolean gain;
 
-    RowEntry(String text, float netdiff){
+    //simple class that stores all data for a row in the recycler
+    RowEntry(String text, BigDecimal netdiff){
         tweetContent = text;
         netGainLoss = netdiff;
-        gain = netdiff > 0 ? true : false;
+        if(netdiff.compareTo(BigDecimal.ZERO) > 0){
+            gain = true;
+        }else {
+            gain = false;
+        }
     }
 
-    public float getNetGainLoss() {
+    public BigDecimal getNetGainLoss() {
         return netGainLoss;
     }
 

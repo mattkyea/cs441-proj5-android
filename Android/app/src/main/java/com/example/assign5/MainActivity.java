@@ -22,6 +22,7 @@ import com.litesoftwares.coingecko.impl.CoinGeckoApiClientImpl;
 import android.inputmethodservice.Keyboard;
 import android.os.Bundle;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -32,76 +33,76 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        // The factory instance is re-useable and thread safe.
 
+        //setting up Twitter API wrapper
+        //authorization and private keys
         ConfigurationBuilder cb = new ConfigurationBuilder();
         cb.setDebugEnabled(true);
+
+
+        //API object I can interact with
         TwitterFactory tf = new TwitterFactory(cb.build());
         Twitter twitter = tf.getInstance();
 
+        //this is all we need for the crypto API wrapper
+        CoinGeckoApiClient client = new CoinGeckoApiClientImpl();
+
         ArrayList<RowEntry> recyclerEntries = new ArrayList<>();
 
+        //web requests need to be on a different thread
         Thread thread = new Thread(new Runnable() {
 
             @Override
             public void run() {
                 try  {
-                    //Twitter twitter = TwitterFactory.getSingleton();
-                    List<Status> statuses = null;
-
+                    ResponseList<Status> statuses = null;
                     try {//try to get last 100 statuses
-                        Paging paging = new Paging(1, 5);
-                        statuses = twitter.getUserTimeline("elonmusk", paging);
+                        Paging paging = new Paging(1, 50);
+                        while (statuses == null || statuses.size() == 0|| statuses.size() == 1){//sometimes the call only returns 0 or 1 status. so, retry until I get what I want
+                            //System.out.println("0 statuses");
+                            statuses = twitter.getUserTimeline("elonmusk", paging);
+                        }
                     } catch (TwitterException e) {
                         e.printStackTrace();
                     }
 
-                    System.out.println("Showing elon's timeline, " + statuses.size() + " statuses");
-                    CoinGeckoApiClient client = new CoinGeckoApiClientImpl();
-                    MarketChart mc;
+                    //System.out.println("Showing elon's timeline, " + statuses.size() + " statuses");
+
+                    MarketChart mc;//stores crypto info
                     for (Status status : statuses) {
-                        //System.out.println(status.getUser().getName() + ":" + status.getText() + " at " + status.getCreatedAt());
-                        //convert time to UNIX, and look at price 2 hours after
                         Date timeOfTweet = status.getCreatedAt();
-                        long millisecondOfTweet = timeOfTweet.getTime()/1000;
-                        long twoHoursAfterTweet = millisecondOfTweet + 7200000; //7,200,000 milliseconds in 2 hours
-                        mc = client.getCoinMarketChartRangeById("dogecoin", "usd", Long.toString(millisecondOfTweet),Long.toString(twoHoursAfterTweet));
-                        if(mc.getPrices().size() >=2){
-                            float before  = Float.parseFloat(mc.getPrices().get(0).get(1));//at time of tweet
-                            float after  = Float.parseFloat(mc.getPrices().get(mc.getPrices().size()-1).get(1));//2 hours after
-                            System.out.println("added entry");
-                            recyclerEntries.add(new RowEntry(status.getText(), after-before));
+                        long secondOfTweet = timeOfTweet.getTime()/1000; //convert time to UNIX
+                        long twoHoursAfterTweet = secondOfTweet + 7200; //and look at price 2 hours after (7,200 seconds is 2 hours)
+                        mc = client.getCoinMarketChartRangeById("dogecoin", "usd", Long.toString(secondOfTweet), Long.toString(twoHoursAfterTweet));//request to crypto API
+                        //features of this API were lacking, and I could only get cost at a specific time with a range like this
+                        if(mc.getPrices().size() >=2){//sometimes doesn't return results (we need at least 2 entries)
+
+                            double before  = Double.parseDouble(mc.getPrices().get(0).get(1));//cost at time of tweet
+                            double after  = Double.parseDouble(mc.getPrices().get(mc.getPrices().size()-1).get(1));//cost 2 hours after
+                            //need to use BigDecimal, I had rounding errors without
+                            BigDecimal b = BigDecimal.valueOf(before);
+                            BigDecimal a = BigDecimal.valueOf(after);
+                            recyclerEntries.add(new RowEntry(status.getText(), (a.subtract(b))));
+
                         }else {
-                            System.out.println("didn't add entry");
-                            recyclerEntries.add(new RowEntry(status.getText(), 0));//no data, should change constructor
+                            recyclerEntries.add(new RowEntry(status.getText(), BigDecimal.ZERO));//no data
                         }
                     }
 
+                    //can't update entries until we're done with web requests
+                    //but can't add UI elements in the same thread
+                    //so use this UI thread
                     runOnUiThread(new Runnable() {
 
                         @Override
                         public void run() {
-
-                            // Stuff that updates the UI
-                            System.out.println("setting up recycler");
-
                             RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recyclerList);
-
                             final RecycleViewAdapter a = new RecycleViewAdapter(recyclerEntries, recyclerView);//call my adapter with the arraylist and view
                             //need list for elements, view for click handler
                             recyclerView.setAdapter(a);//set view and my adapter
                             recyclerView.setLayoutManager(new LinearLayoutManager(getApplicationContext()));
-
                         }
                     });
-
-
-                    /*
-                    for(List<String> s: mc.getPrices()){
-                        System.out.println("at " +  s.get(0) + " doge was worth " + s.get(1));
-                    }
-                     */
-
 
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -111,46 +112,8 @@ public class MainActivity extends AppCompatActivity {
 
         thread.start();
 
-        Thread thread2 = new Thread(new Runnable() {
-
-            @Override
-            public void run() {
-                try  {
-
-
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-
-        //thread2.start();
-
     }
 
-    //updates, as I have no code here yet
-    //- I set up a twitter developer account to access the API
-    //- And found what request I need using Postman to test
-    //- text will be easy, but I don't think I'll be able to do pictures easily
-    //API link will be something like
-    //https://api.twitter.com/2/users/:id/tweets?max_results=100&tweet.fields=attachments,created_at,text,entities
-    //but I also need to send my token
-    //and some of the tweet.fields might change
-
-    //update 2
-    //decided that using Twitter4J would be easier
-    //its basically a Java wrapper around Twitter's API
-    //i've done the same thing in the past (Spotipy for Python around Spotify's API) and liked it much more
-
-    //basic, but I'll leave front end for later
-    //let's use crypto API next
-
-    //crypto API a success thanks to wrapper and jitpack.io (able to pull entire git repo in as dependency, this is the future)
-    //going to add recycler view stuff from last project then call it for today
-    //still a lot to do after that though
-    // -display as a "tweet" (i.e. profile pic, text with right font, pictures/attachments if I can)
-    // -do the data crunching (turn time of each tweet into UNIX timestamp so I can track prices over time)
 
 
 
