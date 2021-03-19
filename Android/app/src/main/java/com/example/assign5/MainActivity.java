@@ -37,8 +37,11 @@ public class MainActivity extends AppCompatActivity {
         //setting up Twitter API wrapper
         //authorization and private keys
         ConfigurationBuilder cb = new ConfigurationBuilder();
-        cb.setDebugEnabled(true);
-
+        cb.setDebugEnabled(true)
+                .setOAuthConsumerKey("***")
+                .setOAuthConsumerSecret("***")
+                .setOAuthAccessToken("***")
+                .setOAuthAccessTokenSecret("***");
 
         //API object I can interact with
         TwitterFactory tf = new TwitterFactory(cb.build());
